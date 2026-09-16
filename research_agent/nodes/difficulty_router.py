@@ -26,34 +26,51 @@ class DifficultyClassification(BaseModel):
     difficulty: Literal["shallow", "direct", "deep"] = Field(
         description=(
             "The research difficulty tier for the query: "
-            "'shallow' (single narrow factual lookup answerable with one search), "
-            "'direct' (answerable from general knowledge/arithmetic with no search needed), "
-            "or 'deep' (requires multi-hop reasoning, decomposition, multiple entities, or synthesis)."
+            "'direct' (timeless, mathematically or physically fixed facts, arithmetic, physical/chemical constants, or settled definitions that cannot change in the future), "
+            "'shallow' (single lookup of institutional, political, demographic, or statistical facts that could plausibly change over time), "
+            "or 'deep' (requires multi-hop reasoning, decomposition, comparison across multiple entities, or synthesis)."
         )
     )
     reasoning: str = Field(
-        description="A short explanation of why this difficulty tier was assigned."
+        description="A short explanation of why this difficulty tier was assigned, applying the timeless vs. time-variable test."
     )
 
 
 DIFFICULTY_ROUTER_SYSTEM_PROMPT = """You are an expert research routing engine in a multi-stage research pipeline.
-Your task is to analyze the user's research query and its previously extracted metadata (intent, entities, constraints) to classify the research difficulty into exactly one of three tiers:
+Your task is to analyze the user's research query and its previously extracted metadata (intent, entities, constraints) to classify the research difficulty into exactly one of three tiers: 'direct', 'shallow', or 'deep'.
 
-1. 'shallow':
-   - A single, narrow factual lookup answerable with one targeted search.
-   - Examples: "What is the capital of France?", "Who is the CEO of Apple?", "When was the Eiffel Tower built?"
+CLASSIFICATION PRINCIPLES & RULES:
 
-2. 'direct':
-   - Answerable directly from general knowledge or simple deduction/arithmetic with no web search needed at all.
-   - Examples: "What is 15 times 12?", "Define photosynthesis", "What is the boiling point of water at sea level?", "How many hours are in a day?"
+1. 'direct' (Timeless Facts & Direct Computation):
+   - The answer is timeless: it is mathematically, physically, or scientifically fixed and cannot change regardless of when someone asks.
+   - Core Decision Test: "Could this answer ever be different in the future?" If NO, it is 'direct'. There is zero verification value in performing a web search.
+   - Includes:
+     * Arithmetic, unit conversions, and calculations (e.g. "What is 15 times 12?", "Convert 50 miles to kilometers").
+     * Mathematical constants and properties (e.g. "What is the value of pi?", "What is a prime number?").
+     * Physical and chemical constants or standard properties (e.g. "What is the freezing point of water in Celsius?", "What is the speed of light in a vacuum?", "What is the boiling point of water at sea level?").
+     * Settled scientific definitions and concepts (e.g. "Define photosynthesis", "What is an electron?").
+     * Historical facts about completed past events (e.g. "When was the Eiffel Tower built?", "When did Apollo 11 land on the moon?").
 
-3. 'deep':
-   - Requires decomposition into multiple sub-questions, comparison across multiple entities, multi-hop reasoning, or synthesis across several sources.
-   - Any query with multiple explicit constraints stacked together (e.g., time range + format limits + scope limits) or comparing multiple countries, policies, or complex systems.
-   - Examples: "Compare the economic policies of the United States and Japan", "Summarize developments in quantum computing since 2023, in under 200 words", "Analyze the geopolitical impact of renewable energy transition in Europe".
+2. 'shallow' (Time-Variable or Institutional Single Lookup):
+   - The answer is currently stable but could plausibly change over time — it depends on external institutional, geopolitical, demographic, or market state.
+   - Core Decision Test: "Could this answer theoretically change over time (even if slowly or rarely)?" If YES, it is 'shallow'. It requires a single targeted web search to confirm the latest current status.
+   - Includes:
+     * Institutional or political facts (e.g. "What is the capital of France?", "What is the capital of Australia?", "Who is the CEO of Apple?", "Who is the current Secretary-General of the United Nations?").
+     * Demographic, economic, or statistical figures (e.g. "What is the current population of Japan?", "What is the GDP of Germany?").
+     * Dynamic current data or queries phrased with "current", "latest", "now", or "today" (e.g. "What is the current price of gold?").
+
+3. 'deep' (Multi-Hop, Decomposition & Synthesis):
+   - Requires multi-step reasoning, query decomposition, comparison across multiple entities, multi-part conjunctions, or multi-faceted synthesis across multiple sources.
+   - Any query comparing multiple countries, policies, entities, or complex systems.
+   - Any query with multiple explicit operational constraints stacked together (e.g. time range + format limits + scope limits).
+   - Examples:
+     * "Compare the economic policies of the United States and Japan"
+     * "Summarize developments in quantum computing since 2023, in under 200 words"
+     * "Analyze the geopolitical and economic impact of the renewable energy transition in Europe"
 
 CRITICAL RULES:
-- Base your classification on the query and extracted intent, entities, and constraints.
+- Base your classification strictly on the user's query and extracted intent, entities, and constraints.
+- Apply the timeless vs. time-variable test to distinguish between 'direct' and 'shallow'.
 - DO NOT answer or solve the query itself.
 - Return structured output conforming strictly to the requested schema.
 """
