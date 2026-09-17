@@ -5,6 +5,11 @@ from research_agent.nodes.difficulty_router import (
     DifficultyRouterError,
     difficulty_router,
 )
+from research_agent.nodes.direct_answer import (
+    DirectAnswer,
+    DirectAnswerError,
+    direct_answer,
+)
 from research_agent.nodes.placeholders import (
     deep_placeholder,
     direct_placeholder,
@@ -26,6 +31,10 @@ from research_agent.nodes.search_tracks import (
     search_single_track,
     search_tracks,
 )
+from research_agent.nodes.shallow_search import (
+    ShallowSearchError,
+    shallow_search,
+)
 
 __all__ = [
     "QueryAnalysis",
@@ -37,6 +46,11 @@ __all__ = [
     "shallow_placeholder",
     "direct_placeholder",
     "deep_placeholder",
+    "shallow_search",
+    "ShallowSearchError",
+    "DirectAnswer",
+    "DirectAnswerError",
+    "direct_answer",
     "ResearchPlan",
     "PlannerError",
     "planner",
@@ -45,5 +59,3 @@ __all__ = [
     "search_single_track",
     "search_tracks",
 ]
-
-

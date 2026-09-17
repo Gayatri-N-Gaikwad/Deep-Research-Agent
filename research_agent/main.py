@@ -14,13 +14,15 @@ def pretty_print_state(result: dict) -> None:
     difficulty = result.get("difficulty", "N/A")
     if difficulty == "deep":
         branch = "search_tracks"
-    elif difficulty in ("shallow", "direct"):
-        branch = f"{difficulty}_placeholder"
+    elif difficulty == "shallow":
+        branch = "shallow_search"
+    elif difficulty == "direct":
+        branch = "direct_answer"
     else:
         branch = "N/A"
 
     print("\n" + "=" * 60)
-    print(" RESEARCH PIPELINE - STAGE 4 (PARALLEL SEARCH TRACKS)")
+    print(" RESEARCH PIPELINE - STAGE 5 (SHALLOW & DIRECT PATHS)")
     print("=" * 60)
     print(f" Raw Query:      {result.get('raw_query', '')}")
     print(f" Language:       {result.get('language', 'en')}")
@@ -33,6 +35,8 @@ def pretty_print_state(result: dict) -> None:
     print("   - Difficulty Router:   nvidia_nim (nvidia/nemotron-3-super-120b-a12b)")
     if result.get("plan"):
         print("   - Planner:             gemini (gemini-3.6-flash)")
+    if result.get("answer"):
+        print("   - Direct Answer:       groq (openai/gpt-oss-120b)")
     print("-" * 60)
 
     entities = result.get("entities", [])
@@ -55,6 +59,11 @@ def pretty_print_state(result: dict) -> None:
     if plan:
         print("-" * 60)
         print(f" Research Plan:\n   {plan}")
+
+    answer = result.get("answer")
+    if answer:
+        print("-" * 60)
+        print(f" Direct Answer:\n   {answer}")
 
     sub_queries = result.get("sub_queries", [])
     if sub_queries:
@@ -83,14 +92,12 @@ def main() -> None:
     if missing:
         print(
             f"ERROR: Missing environment variable(s): {', '.join(missing)}\n"
-            "Please ensure these keys are set in your environment or in a .env file.\n"
-            "Active providers: Query Understanding (GROQ_API_KEY), "
-            "Difficulty Router (NVIDIA_API_KEY), Planner (GOOGLE_API_KEY), Search (TAVILY_API_KEY).",
+            "Please ensure these keys are set in your environment or in a .env file.",
             file=sys.stderr,
         )
         sys.exit(1)
 
-    print("=== LangGraph Research Pipeline CLI (Stage 4) ===")
+    print("=== LangGraph Research Pipeline CLI (Stage 5) ===")
     try:
         user_query = input("Enter your research query: ").strip()
     except (EOFError, KeyboardInterrupt):

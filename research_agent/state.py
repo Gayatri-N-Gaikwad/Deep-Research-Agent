@@ -38,6 +38,7 @@ class ResearchState(TypedDict, total=False):
         sub_queries: Concrete decomposed sub-queries for parallel research (Stage 3).
         evidence: Raw evidence items collected from search tracks (Stage 4).
         iteration_count: Multi-hop reasoning iteration counter.
+        answer: Final or direct-path answer text. Populated by the direct path (Stage 5); deep and shallow paths leave this None until the Synthesis stage.
     """
 
     raw_query: str
@@ -50,7 +51,7 @@ class ResearchState(TypedDict, total=False):
     sub_queries: list[str]
     evidence: list[EvidenceItem]
     iteration_count: int
-
+    answer: Optional[str]
 
 
 def create_initial_state(raw_query: str) -> ResearchState:
@@ -66,5 +67,5 @@ def create_initial_state(raw_query: str) -> ResearchState:
         "sub_queries": [],
         "evidence": [],
         "iteration_count": 0,
+        "answer": None,
     }
-

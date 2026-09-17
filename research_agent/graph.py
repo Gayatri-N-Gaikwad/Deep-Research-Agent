@@ -4,13 +4,11 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 from research_agent.nodes.difficulty_router import difficulty_router
-from research_agent.nodes.placeholders import (
-    direct_placeholder,
-    shallow_placeholder,
-)
+from research_agent.nodes.direct_answer import direct_answer
 from research_agent.nodes.planner import planner
 from research_agent.nodes.query_understanding import query_understanding
 from research_agent.nodes.search_tracks import search_tracks
+from research_agent.nodes.shallow_search import shallow_search
 from research_agent.state import ResearchState
 
 
@@ -36,14 +34,14 @@ def route_by_difficulty(state: ResearchState) -> str:
 
 
 def build_graph() -> CompiledStateGraph:
-    """Build and compile the Stage 4 research pipeline StateGraph.
+    """Build and compile the Stage 5 research pipeline StateGraph.
 
     Constructs a StateGraph parameterized by ResearchState with:
     1. START -> query_understanding
     2. query_understanding -> difficulty_router
     3. difficulty_router -> conditional routing (route_by_difficulty)
-       - 'shallow' -> shallow_placeholder -> END
-       - 'direct'  -> direct_placeholder -> END
+       - 'shallow' -> shallow_search -> END
+       - 'direct'  -> direct_answer -> END
        - 'deep'    -> planner -> search_tracks -> END
 
     Returns:
@@ -54,8 +52,8 @@ def build_graph() -> CompiledStateGraph:
     # Add pipeline nodes
     workflow.add_node("query_understanding", query_understanding)
     workflow.add_node("difficulty_router", difficulty_router)
-    workflow.add_node("shallow_placeholder", shallow_placeholder)
-    workflow.add_node("direct_placeholder", direct_placeholder)
+    workflow.add_node("shallow_search", shallow_search)
+    workflow.add_node("direct_answer", direct_answer)
     workflow.add_node("planner", planner)
     workflow.add_node("search_tracks", search_tracks)
 
@@ -68,18 +66,16 @@ def build_graph() -> CompiledStateGraph:
         "difficulty_router",
         route_by_difficulty,
         {
-            "shallow": "shallow_placeholder",
-            "direct": "direct_placeholder",
+            "shallow": "shallow_search",
+            "direct": "direct_answer",
             "deep": "planner",
         },
     )
 
     # Route branches to END
-    workflow.add_edge("shallow_placeholder", END)
-    workflow.add_edge("direct_placeholder", END)
+    workflow.add_edge("shallow_search", END)
+    workflow.add_edge("direct_answer", END)
     workflow.add_edge("planner", "search_tracks")
     workflow.add_edge("search_tracks", END)
 
     return workflow.compile()
-
-
