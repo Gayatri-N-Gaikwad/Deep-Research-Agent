@@ -12,11 +12,13 @@ Rather than relying on a single LLM provider and hitting restrictive free-tier r
 flowchart TD
     User([User Query]) --> QU[Stage 1: Query Understanding\n⚡ Provider: Groq / openai/gpt-oss-120b]
     QU --> DR[Stage 2: Difficulty Router\n🧠 Provider: NVIDIA NIM / Nemotron 3 Super]
-    DR -->|direct| DP[Direct Placeholder\nGeneral knowledge / Math]
-    DR -->|shallow| SP[Shallow Placeholder\nSingle factual lookup]
+    DR -->|direct| DP[Stage 5: Direct Answer\n⚡ Provider: Groq / openai/gpt-oss-120b]
+    DR -->|shallow| SP[Stage 5: Shallow Search\n🔎 Engine: Tavily / single track]
     DR -->|deep| PL[Stage 3: Planner & Decomposition\n🎯 Provider: Gemini / gemini-3.6-flash]
     PL --> ST[Stage 4: Parallel Search Tracks\n🔎 Engine: Tavily Search API]
-    ST --> Out([Aggregated Research State & Evidence])
+    DP --> Out([Aggregated Research State & Evidence])
+    SP --> Out
+    ST --> Out
 ```
 
 | Pipeline Node | Assigned Provider | Pinned Model | Role & Rationale |
@@ -25,6 +27,8 @@ flowchart TD
 | **Difficulty Router** | **NVIDIA NIM** | `nvidia/nemotron-3-super-120b-a12b` | **Fast routing (1.0s – 2.5s)** into `shallow`, `direct`, or `deep` with reasoning control (`enable_thinking: False`). |
 | **Planner & Decomposition** | **Gemini** | `gemini-3.6-flash` | **Deep decomposition (~28s)** into a research strategy with 2–3 independently searchable sub-queries. Gemini quota is preserved only for deep queries. |
 | **Parallel Search Tracks** | **Tavily** | Search REST API | **Concurrent web search** and evidence collection across sub-queries. |
+| **Direct Answer** | **Groq** | `openai/gpt-oss-120b` | **No-search answers** from model knowledge for `direct`-tier queries (e.g. math, general facts). |
+| **Shallow Search** | **Tavily** | Search REST API | **Single-track search** for `shallow`-tier queries; keeps all results from one Tavily call. |
 | *Reserve Option 1* | *NVIDIA NIM Ultra* | `nvidia/nemotron-3-ultra-550b-a55b` | 550B frontier model with verified structured output support (~45s). |
 | *Reserve Option 2* | *OpenRouter* | `nex-agi/nex-n2.5-mini:free` | Free-tier fallback aggregator. |
 
@@ -89,7 +93,7 @@ python main.py
 ## 🧪 Testing
 
 ### Fast Offline Unit Tests (Mocked LLM, Zero API Quota)
-Runs 26 unit tests covering state validation, conditional graph routing, concurrent retrieval, and retry handling:
+Runs 40 unit tests covering state validation, conditional graph routing, concurrent retrieval, and retry handling:
 ```bash
 pytest -m "not integration" -v
 ```
@@ -139,13 +143,17 @@ Deep-Research-Agent/
 │   │   ├── difficulty_router.py    # Stage 2: Complexity routing (NVIDIA NIM)
 │   │   ├── planner.py              # Stage 3: Query decomposition (Gemini)
 │   │   ├── search_tracks.py        # Stage 4: Concurrent Tavily search tracks
-│   │   └── placeholders.py         # Direct/Shallow path handlers
+│   │   ├── direct_answer.py        # Stage 5: Direct-knowledge answers (Groq)
+│   │   ├── shallow_search.py       # Stage 5: Single-track search (Tavily)
+│   │   └── placeholders.py         # Legacy placeholder handlers (unused, pending cleanup)
 │   └── tests/
 │       ├── test_graph_routing.py   # State graph edge routing unit tests
 │       ├── test_query_understanding.py
 │       ├── test_difficulty_router.py
 │       ├── test_planner.py
 │       ├── test_search_tracks.py
+│       ├── test_direct_answer.py
+│       ├── test_shallow_search.py
 │       └── test_live_integration.py# Live multi-provider integration tests
 └── scripts/
     └── probe_structured_output.py  # Diagnostic compatibility probe tool
