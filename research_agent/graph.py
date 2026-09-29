@@ -5,6 +5,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 from research_agent.nodes.difficulty_router import difficulty_router
 from research_agent.nodes.direct_answer import direct_answer
+from research_agent.nodes.hybrid_retrieval import hybrid_retrieval
 from research_agent.nodes.planner import planner
 from research_agent.nodes.query_understanding import query_understanding
 from research_agent.nodes.search_tracks import search_tracks
@@ -42,7 +43,7 @@ def build_graph() -> CompiledStateGraph:
     3. difficulty_router -> conditional routing (route_by_difficulty)
        - 'shallow' -> shallow_search -> END
        - 'direct'  -> direct_answer -> END
-       - 'deep'    -> planner -> search_tracks -> END
+       - 'deep'    -> planner -> search_tracks -> hybrid_retrieval -> END
 
     Returns:
         CompiledStateGraph: The compiled runnable LangGraph instance.
@@ -56,6 +57,7 @@ def build_graph() -> CompiledStateGraph:
     workflow.add_node("direct_answer", direct_answer)
     workflow.add_node("planner", planner)
     workflow.add_node("search_tracks", search_tracks)
+    workflow.add_node("hybrid_retrieval", hybrid_retrieval)
 
     # Wire entry sequence
     workflow.add_edge(START, "query_understanding")
@@ -76,6 +78,7 @@ def build_graph() -> CompiledStateGraph:
     workflow.add_edge("shallow_search", END)
     workflow.add_edge("direct_answer", END)
     workflow.add_edge("planner", "search_tracks")
-    workflow.add_edge("search_tracks", END)
+    workflow.add_edge("search_tracks", "hybrid_retrieval")
+    workflow.add_edge("hybrid_retrieval", END)
 
     return workflow.compile()

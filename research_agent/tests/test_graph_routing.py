@@ -144,6 +144,12 @@ def test_graph_conditional_routing_deep_reaches_search_tracks():
     )
     mock_tavily = MockTavilySearchClient()
 
+    class MockEmbeddingModel:
+        def encode(self, texts, show_progress_bar=False):
+            if isinstance(texts, str):
+                return [1.0, 0.0, 0.0]
+            return [[1.0, 0.0, 0.0] for _ in texts]
+
     with patch(
         "research_agent.nodes.query_understanding.get_structured_llm",
         return_value=MockRunnable(mock_query_output),
@@ -156,6 +162,9 @@ def test_graph_conditional_routing_deep_reaches_search_tracks():
     ), patch(
         "research_agent.nodes.search_tracks.get_tavily_client",
         return_value=mock_tavily,
+    ), patch(
+        "research_agent.nodes.hybrid_retrieval.get_embedding_model",
+        return_value=MockEmbeddingModel(),
     ):
         app = build_graph()
         initial_state = create_initial_state("Compare the economic policies of the United States and Japan")
@@ -172,4 +181,9 @@ def test_graph_conditional_routing_deep_reaches_search_tracks():
         assert len(final_state["evidence"]) == 3
         track_ids = {item["track_id"] for item in final_state["evidence"]}
         assert track_ids == {0, 1, 2}
+
+        # Assert hybrid_retrieval node ran and populated ranked_evidence
+        assert "ranked_evidence" in final_state
+        assert len(final_state["ranked_evidence"]) == 3
+        assert final_state["ranked_evidence"][0]["rank"] == 1
         assert final_state.get("answer") is None

@@ -16,7 +16,8 @@ flowchart TD
     DR -->|shallow| SP[Shallow Placeholder\nSingle factual lookup]
     DR -->|deep| PL[Stage 3: Planner & Decomposition\n🎯 Provider: Gemini / gemini-3.6-flash]
     PL --> ST[Stage 4: Parallel Search Tracks\n🔎 Engine: Tavily Search API]
-    ST --> Out([Aggregated Research State & Evidence])
+    ST --> HR[Stage 5: Hybrid Retrieval\n⚖️ IndicSBERT + BM25Okapi]
+    HR --> Out([Aggregated Research State & Ranked Evidence])
 ```
 
 | Pipeline Node | Assigned Provider | Pinned Model | Role & Rationale |
@@ -25,6 +26,7 @@ flowchart TD
 | **Difficulty Router** | **NVIDIA NIM** | `nvidia/nemotron-3-super-120b-a12b` | **Fast routing (1.0s – 2.5s)** into `shallow`, `direct`, or `deep` with reasoning control (`enable_thinking: False`). |
 | **Planner & Decomposition** | **Gemini** | `gemini-3.6-flash` | **Deep decomposition (~28s)** into a research strategy with 2–3 independently searchable sub-queries. Gemini quota is preserved only for deep queries. |
 | **Parallel Search Tracks** | **Tavily** | Search REST API | **Concurrent web search** and evidence collection across sub-queries. |
+| **Hybrid Retrieval** | **Local (SBERT + BM25)** | `l3cube-pune/indic-sentence-bert-nli` | **Dual-signal ranking & RRF fusion (~176.6ms warm)** with exact URL deduplication across search tracks. |
 | *Reserve Option 1* | *NVIDIA NIM Ultra* | `nvidia/nemotron-3-ultra-550b-a55b` | 550B frontier model with verified structured output support (~45s). |
 | *Reserve Option 2* | *OpenRouter* | `nex-agi/nex-n2.5-mini:free` | Free-tier fallback aggregator. |
 

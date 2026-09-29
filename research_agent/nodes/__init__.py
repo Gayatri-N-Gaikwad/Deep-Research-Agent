@@ -25,6 +25,10 @@ from research_agent.nodes.query_understanding import (
     QueryUnderstandingError,
     query_understanding,
 )
+from research_agent.nodes.hybrid_retrieval import (
+    HybridRetrievalError,
+    hybrid_retrieval,
+)
 from research_agent.nodes.search_tracks import (
     SearchTracksError,
     get_tavily_client,
@@ -58,4 +62,6 @@ __all__ = [
     "get_tavily_client",
     "search_single_track",
     "search_tracks",
+    "HybridRetrievalError",
+    "hybrid_retrieval",
 ]
